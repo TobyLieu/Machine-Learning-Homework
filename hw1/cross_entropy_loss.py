@@ -6,6 +6,8 @@ from sklearn.svm import SVC
 
 def sigmoid(x):
     s = 1 / (1 + np.exp(-x))
+    if(s == 1):
+        return s - 1e-5
     return s
 
 
@@ -16,8 +18,8 @@ train_label = train_frame[:, 0]
 test_data = test_frame[:, 1:] / 255
 test_label = test_frame[:, 0]
 
-epoch = 10000
-lr = 0.5
+epoch = 500
+lr = 3
 w = np.random.randn(train_data.shape[1], 1)
 n = train_data.shape[0]
 dim = train_data.shape[1]
