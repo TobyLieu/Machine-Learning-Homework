@@ -31,8 +31,6 @@ dim = train_data.shape[1]
 x = train_data
 y = train_label
 
-print(test_label[5])
-
 hin_old_loss = 100
 for i in range(epoch):
     hin_grad_sum = np.zeros([784, 1])
@@ -53,8 +51,6 @@ for i in range(epoch):
 
 right = 0
 for l in range(test_data.shape[0]):
-    if(test_label[l] == -1):
-        print(np.dot(test_data[l], w), test_label[l])
     if(np.dot(test_data[l], w) * test_label[l] > 0):
         right += 1
 
