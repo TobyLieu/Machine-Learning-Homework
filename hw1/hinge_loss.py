@@ -1,12 +1,6 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.svm import SVC
-
-
-def sigmoid(x):
-    s = 1 / (1 + np.exp(-x))
-    return s
 
 
 train_frame = pd.read_csv('./Data/mnist_01_train.csv').values
@@ -23,15 +17,17 @@ for i in range(test_label.shape[0]):
     if(test_label[i] == 0):
         test_label[i] = -1
 
-epoch = 1000
-lr = 1
-w = np.random.randn(train_data.shape[1], 1)
+epoch = 200
+lr = 0.1
+w = np.random.random((train_data.shape[1], 1))
 n = train_data.shape[0]
 dim = train_data.shape[1]
 x = train_data
 y = train_label
 
 hin_old_loss = 100
+loss_list = []
+loss_x = []
 for i in range(epoch):
     hin_grad_sum = np.zeros([784, 1])
     hin_loss_sum = 0
@@ -43,9 +39,13 @@ for i in range(epoch):
         # print(hin_loss_sum)
     hin_grad = hin_grad_sum / n
     hin_loss = hin_loss_sum / n
+
+    loss_list.append(hin_loss[0][0])
+    loss_x.append(i)
+
     print(i, hin_loss)
-    if(abs(hin_old_loss - hin_loss) < 1e-5):
-        break
+    '''if(abs(hin_old_loss - hin_loss) < 1e-7):
+        break'''
     w = w - lr * hin_grad
     hin_old_loss = hin_loss
 
@@ -56,3 +56,7 @@ for l in range(test_data.shape[0]):
 
 hin_acc = right / test_data.shape[0]
 print("hin_acc =", hin_acc)
+
+plt.plot(loss_x, loss_list)
+plt.savefig('./Figure/' + str(epoch) + '+' + str(lr) + '.png')
+plt.show()
