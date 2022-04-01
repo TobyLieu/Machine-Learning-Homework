@@ -16,12 +16,12 @@ train_label = train_frame[:, 0]
 test_data = test_frame[:, 1:] / 255
 test_label = test_frame[:, 0]
 
-for i in train_label:
-    if(i == 0):
-        i = -1
-for i in test_label:
-    if(i == 0):
-        i = -1
+for i in range(train_label.shape[0]):
+    if(train_label[i] == 0):
+        train_label[i] = -1
+for i in range(test_label.shape[0]):
+    if(test_label[i] == 0):
+        test_label[i] = -1
 
 epoch = 1000
 lr = 1
@@ -30,6 +30,8 @@ n = train_data.shape[0]
 dim = train_data.shape[1]
 x = train_data
 y = train_label
+
+print(test_label[5])
 
 hin_old_loss = 100
 for i in range(epoch):
@@ -51,7 +53,9 @@ for i in range(epoch):
 
 right = 0
 for l in range(test_data.shape[0]):
-    if(np.dot(test_data[l], w) * test_label[l] >= 0):
+    if(test_label[l] == -1):
+        print(np.dot(test_data[l], w), test_label[l])
+    if(np.dot(test_data[l], w) * test_label[l] > 0):
         right += 1
 
 hin_acc = right / test_data.shape[0]

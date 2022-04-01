@@ -18,7 +18,7 @@ train_label = train_frame[:, 0]
 test_data = test_frame[:, 1:] / 255
 test_label = test_frame[:, 0]
 
-epoch = 500
+epoch = 1000
 lr = 3
 w = np.random.randn(train_data.shape[1], 1)
 n = train_data.shape[0]
