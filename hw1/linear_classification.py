@@ -16,8 +16,8 @@ train_label = train_frame[:, 0]
 test_data = test_frame[:, 1:] / 255
 test_label = test_frame[:, 0]
 
-epoch = 10000
-lr = 0.5
+epoch = 1000
+lr = 3
 w = np.random.randn(train_data.shape[1], 1)
 n = train_data.shape[0]
 dim = train_data.shape[1]
@@ -42,17 +42,17 @@ for i in range(epoch):
         if(abs(sigmoid(np.dot(train_data[l], w)) - train_label[l]) < 0.5):
             right += 1
 
-    cel_acc = right / train_data.shape[0]
+    cel_acc = right / train_data.shape[0] 
     print("cel_acc =", cel_acc)'''
-    if(abs(cel_old_loss - cel_loss) < 1e-5):
+    if(abs(cel_old_loss - cel_loss) < 1e-6):
         break
     w = w - lr * cel_grad
     cel_old_loss = cel_loss
 
 right = 0
 for l in range(test_data.shape[0]):
-    if(abs(sigmoid(np.dot(test_data[l], w)) - test_label[l]) < 0.5):
+    if(abs(sigmoid(np.dot(test_data[l], w)) - test_label[l]) <= 0.5):
         right += 1
 
 cel_acc = right / test_data.shape[0]
-print("cel_acc =", cel_acc)
+print("cel_acc =", cel_acc, "right =", right)
