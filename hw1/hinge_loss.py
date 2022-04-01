@@ -58,5 +58,5 @@ hin_acc = right / test_data.shape[0]
 print("hin_acc =", hin_acc)
 
 plt.plot(loss_x, loss_list)
-plt.savefig('./Figure/' + str(epoch) + '+' + str(lr) + '.png')
-plt.show()
+# plt.savefig('./Figure/' + str(epoch) + '+' + str(lr) + '.png')
+# plt.show()

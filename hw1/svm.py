@@ -10,11 +10,11 @@ train_label = train_frame[:, 0]
 test_data = test_frame[:, 1:]
 test_label = test_frame[:, 0]
 
-linear_svm = SVC(kernel="linear")
+linear_svm = SVC(kernel="linear", C=2.0, tol=1e-5)
 linear_svm.fit(train_data, train_label)
 linear_acc = linear_svm.score(test_data, test_label)
 
-rbf_svm = SVC(kernel="rbf")
+rbf_svm = SVC(kernel="rbf", C=2.0, tol=1e-5)
 rbf_svm.fit(train_data, train_label)
 rbf_acc = rbf_svm.score(test_data, test_label)
 

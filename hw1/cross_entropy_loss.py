@@ -18,7 +18,7 @@ train_label = train_frame[:, 0]
 test_data = test_frame[:, 1:] / 255
 test_label = test_frame[:, 0]
 
-epoch = 200
+epoch = 100
 lr = 2
 w = np.random.random((train_data.shape[1], 1))
 n = train_data.shape[0]
@@ -27,6 +27,8 @@ x = train_data
 y = train_label
 
 cel_old_loss = 100
+loss_list = []
+loss_x = []
 for i in range(epoch):
     cel_grad_sum = np.zeros([784, 1])
     cel_loss_sum = 0
@@ -38,6 +40,10 @@ for i in range(epoch):
         # print(cel_loss_sum)
     cel_grad = cel_grad_sum / n
     cel_loss = cel_loss_sum / n
+
+    loss_list.append(cel_loss[0][0])
+    loss_x.append(i)
+
     print(i, cel_loss)
     if(abs(cel_old_loss - cel_loss) < 1e-6):
         break
@@ -51,3 +57,7 @@ for l in range(test_data.shape[0]):
 
 cel_acc = right / test_data.shape[0]
 print("cel_acc =", cel_acc)
+
+plt.plot(loss_x, loss_list)
+# plt.savefig('./Figure/' + str(epoch) + '+' + str(lr) + '.png')
+# plt.show()
