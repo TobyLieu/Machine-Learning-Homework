@@ -26,9 +26,6 @@ transform = transforms.Compose([
     transforms.RandomCrop(32),
     # 转换至Tensor
     transforms.ToTensor(),
-    #  归一化
-    #     transforms.Normalize(mean=(0.5, 0.5, 0.5),   # 3 for RGB channels
-    #                                      std=(0.5, 0.5, 0.5))
 ])
 
 # cifar10路径
@@ -45,7 +42,6 @@ test_dataset = torchvision.datasets.CIFAR10(root=cifar10Path,
                                             train=False,
                                             transform=transform)
 
-# 生成数据加载器
 # 训练数据加载器
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
@@ -67,7 +63,48 @@ class LinearNet(nn.Module):
         return F.softmax(self.linear(x), dim=1)
 
 
-model = LinearNet(num_inputs, num_outputs)
+hidden_layer_size_1 = 4000
+
+
+class MLPNet(nn.Module):
+
+    def __init__(self, num_inputs, num_outputs):
+        super(MLPNet, self).__init__()  #
+        self.fc1 = torch.nn.Linear(num_inputs, hidden_layer_size_1)  # 第一个隐含层
+        # self.fc2 = torch.nn.Linear(1024, 128)  # 第二个隐含层
+        self.fcout = torch.nn.Linear(hidden_layer_size_1, num_outputs)  # 输出层
+
+    def forward(self, x):
+        x = x.view(-1, num_inputs)  # 将一个多行的Tensor,拼接成一行
+        x = F.relu(self.fc1(x))  # 使用 relu 激活函数
+        # x = F.relu(self.fc2(x))
+        x = F.softmax(self.fcout(x), dim=1)  # 输出层使用 softmax 激活函数
+        return x
+
+
+class CNNNet(nn.Module):
+
+    def __init__(self):
+        super(CNNNet, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)  # 最后是一个十分类，所以最后的一个全连接层的神经元个数为10
+
+    def forward(self, x):
+        x = F.max_pool2d(F.relu(self.conv1(x)), 2)
+        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+        x = x.view(x.size()[0], -1)  # 展平  x.size()[0]是batch size
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+# model = LinearNet(num_inputs, num_outputs)
+# model = MLPNet(num_inputs, num_outputs)
+model = CNNNet()
 optimizer = optim.SGD(params=model.parameters(),
                       lr=learning_rate,
                       momentum=momentum)
@@ -89,9 +126,6 @@ def train(epoch):
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.data.item()))
-            print(data.shape)
-            print(target.shape)
-            print(output.shape)
 
 
 def test():
@@ -114,6 +148,6 @@ def test():
                      100. * correct / len(test_loader.dataset)))
 
 
-for epoch in range(1, 10):
+for epoch in range(1, 20):
     train(epoch)
     test()
