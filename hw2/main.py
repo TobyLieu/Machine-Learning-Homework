@@ -6,9 +6,10 @@ import torchvision
 import torchvision.transforms as transforms
 import numpy as np
 from torch.autograd import Variable
+import matplotlib.pyplot as plt
 
 # hyper parameter
-criterion = F.cross_entropy
+criterion = nn.CrossEntropyLoss()
 batch_size = 64
 num_inputs = 3072
 num_outputs = 10
@@ -16,7 +17,7 @@ learning_rate = 1e-2
 momentum = 0.9
 num_epochs = 5
 
-# 数据增广方法
+# 数据预处理
 transform = transforms.Compose([
     # +4填充至36x36
     transforms.Pad(4),
@@ -26,10 +27,12 @@ transform = transforms.Compose([
     transforms.RandomCrop(32),
     # 转换至Tensor
     transforms.ToTensor(),
+    # 归一化
+    transforms.Normalize(std=(0.5, 0.5, 0.5), mean=(0.5, 0.5, 0.5))
 ])
 
 # cifar10路径
-cifar10Path = '../../Data/cifar'
+cifar10Path = '~/Data/cifar'
 
 #  训练数据集
 train_dataset = torchvision.datasets.CIFAR10(root=cifar10Path,
@@ -53,49 +56,48 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 
 class LinearNet(nn.Module):
-
-    def __init__(self, num_inputs, num_outputs):
+    def __init__(self):
         super(LinearNet, self).__init__()
         self.linear = nn.Linear(num_inputs, num_outputs)
 
-    def forward(self, x):  # x shape: (batch, 1, 28, 28)
+    def forward(self, x):
         x = x.view(-1, num_inputs)
         return F.softmax(self.linear(x), dim=1)
 
 
 hidden_layer_size_1 = 4000
+hidden_layer_size_2 = 2000
 
 
 class MLPNet(nn.Module):
-
-    def __init__(self, num_inputs, num_outputs):
+    def __init__(self):
         super(MLPNet, self).__init__()  #
-        self.fc1 = torch.nn.Linear(num_inputs, hidden_layer_size_1)  # 第一个隐含层
-        # self.fc2 = torch.nn.Linear(1024, 128)  # 第二个隐含层
-        self.fcout = torch.nn.Linear(hidden_layer_size_1, num_outputs)  # 输出层
+        self.fc1 = torch.nn.Linear(num_inputs, hidden_layer_size_1)  # 第一个隐藏层
+        self.fc2 = torch.nn.Linear(hidden_layer_size_1,
+                                   hidden_layer_size_2)  # 第二个隐藏层
+        self.fcout = torch.nn.Linear(hidden_layer_size_2, num_outputs)  # 输出层
 
     def forward(self, x):
         x = x.view(-1, num_inputs)  # 将一个多行的Tensor,拼接成一行
         x = F.relu(self.fc1(x))  # 使用 relu 激活函数
-        # x = F.relu(self.fc2(x))
+        x = F.relu(self.fc2(x))
         x = F.softmax(self.fcout(x), dim=1)  # 输出层使用 softmax 激活函数
         return x
 
 
 class CNNNet(nn.Module):
-
     def __init__(self):
         super(CNNNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)  # 最后是一个十分类，所以最后的一个全连接层的神经元个数为10
+        self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
         x = F.max_pool2d(F.relu(self.conv1(x)), 2)
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(x.size()[0], -1)  # 展平  x.size()[0]是batch size
+        x = x.view(x.size()[0], -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -104,16 +106,22 @@ class CNNNet(nn.Module):
 
 # model = LinearNet(num_inputs, num_outputs)
 # model = MLPNet(num_inputs, num_outputs)
-model = CNNNet()
+model = MLPNet()
 optimizer = optim.SGD(params=model.parameters(),
                       lr=learning_rate,
                       momentum=momentum)
+
+if (torch.cuda.is_available()):
+    model = model.cuda()
+    criterion = criterion.cuda()
 
 
 def train(epoch):
     # 每次输入barch_idx个数据
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = Variable(data), Variable(target)
+        if (torch.cuda.is_available()):
+            data, target = data.cuda(), target.cuda()
 
         optimizer.zero_grad()
         output = model(data)
@@ -123,26 +131,35 @@ def train(epoch):
         # update
         optimizer.step()
         if batch_idx % 100 == 0:
+            if (torch.cuda.is_available()):
+                data, loss = data.cpu(), loss.cpu()
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.data.item()))
 
 
-def test():
+x = []
+acc_list = []
+
+
+def test(epoch):
     with torch.no_grad():
         test_loss = 0
         correct = 0
         # 测试集
         for data, target in test_loader:
-            # data, target = Variable(data, volatile=True), Variable(target)
+            if (torch.cuda.is_available()):
+                data, target = data.cuda(), target.cuda()
             output = model(data)
-            # sum up batch loss
             test_loss += criterion(output, target).data.item()
-            # get the index of the max
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).cpu().sum()
 
         test_loss /= len(test_loader.dataset)
+
+        x.append(epoch)
+        acc_list.append(100. * correct / len(test_loader.dataset))
+
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.
               format(test_loss, correct, len(test_loader.dataset),
                      100. * correct / len(test_loader.dataset)))
@@ -150,4 +167,11 @@ def test():
 
 for epoch in range(1, 20):
     train(epoch)
-    test()
+    test(epoch)
+
+plt.plot(x, acc_list)
+plt.title('mlp,layer=3')
+plt.xlabel('epoch')
+plt.ylabel('accuracy')
+plt.savefig('./fig/mlp,layer=4.png')
+plt.show()
