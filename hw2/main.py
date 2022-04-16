@@ -14,8 +14,13 @@ batch_size = 64
 num_inputs = 3072
 num_outputs = 10
 learning_rate = 1e-2
-momentum = 0.9
-num_epochs = 5
+momentum = 0.5
+num_epochs = 50
+
+hidden_layer_size = 5
+layer_num = 2
+kenel_num = 6
+net_type = 'cnn'
 
 # 数据预处理
 transform = transforms.Compose([
@@ -39,7 +44,6 @@ train_dataset = torchvision.datasets.CIFAR10(root=cifar10Path,
                                              train=True,
                                              transform=transform,
                                              download=True)
-
 # 测试数据集
 test_dataset = torchvision.datasets.CIFAR10(root=cifar10Path,
                                             train=False,
@@ -65,22 +69,19 @@ class LinearNet(nn.Module):
         return F.softmax(self.linear(x), dim=1)
 
 
-hidden_layer_size_1 = 4000
-hidden_layer_size_2 = 2000
-
-
 class MLPNet(nn.Module):
     def __init__(self):
         super(MLPNet, self).__init__()  #
-        self.fc1 = torch.nn.Linear(num_inputs, hidden_layer_size_1)  # 第一个隐藏层
-        self.fc2 = torch.nn.Linear(hidden_layer_size_1,
-                                   hidden_layer_size_2)  # 第二个隐藏层
-        self.fcout = torch.nn.Linear(hidden_layer_size_2, num_outputs)  # 输出层
+        self.fc1 = torch.nn.Linear(num_inputs, hidden_layer_size)  # 第一个隐藏层
+        # self.fc2 = torch.nn.Linear(hidden_layer_size, hidden_layer_size)  # 第二个隐藏层
+        # self.fc3 = torch.nn.Linear(hidden_layer_size, hidden_layer_size)  # 第三个隐藏层
+        self.fcout = torch.nn.Linear(hidden_layer_size, num_outputs)  # 输出层
 
     def forward(self, x):
         x = x.view(-1, num_inputs)  # 将一个多行的Tensor,拼接成一行
         x = F.relu(self.fc1(x))  # 使用 relu 激活函数
-        x = F.relu(self.fc2(x))
+        # x = F.relu(self.fc2(x))
+        # x = F.relu(self.fc3(x))
         x = F.softmax(self.fcout(x), dim=1)  # 输出层使用 softmax 激活函数
         return x
 
@@ -95,8 +96,8 @@ class CNNNet(nn.Module):
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
-        x = F.max_pool2d(F.relu(self.conv1(x)), 2)
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+        x = F.max_pool2d(F.relu(self.conv1(x)), 2, 2)
+        x = F.max_pool2d(F.relu(self.conv2(x)), 2, 2)
         x = x.view(x.size()[0], -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
@@ -106,7 +107,7 @@ class CNNNet(nn.Module):
 
 # model = LinearNet(num_inputs, num_outputs)
 # model = MLPNet(num_inputs, num_outputs)
-model = MLPNet()
+model = CNNNet()
 optimizer = optim.SGD(params=model.parameters(),
                       lr=learning_rate,
                       momentum=momentum)
@@ -165,13 +166,11 @@ def test(epoch):
                      100. * correct / len(test_loader.dataset)))
 
 
-for epoch in range(1, 20):
-    train(epoch)
-    test(epoch)
+if __name__ == '__main__':
+    for epoch in range(1, num_epochs):
+        train(epoch)
+        test(epoch)
 
-plt.plot(x, acc_list)
-plt.title('mlp,layer=3')
-plt.xlabel('epoch')
-plt.ylabel('accuracy')
-plt.savefig('./fig/mlp,layer=4.png')
-plt.show()
+    x = np.array(x)
+    acc_list = np.array(acc_list)
+    np.savez('./result/' + net_type + '/momentum=' + momentum, x, acc_list)
