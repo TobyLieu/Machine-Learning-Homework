@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 # hyper parameter
 criterion = nn.CrossEntropyLoss()
-batch_size = 128
+batch_size = 64
 num_inputs = 3072
 num_outputs = 10
 learning_rate = 1e-2
@@ -25,7 +25,7 @@ net_type = 'resnet'
 
 # 数据预处理
 transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),  #先四周填充0，在吧图像随机裁剪成32*32
+    transforms.RandomCrop(32, padding=4),  #先四周填充0，在把图像随机裁剪成32*32
     transforms.RandomHorizontalFlip(),  #图像一半的概率翻转，一半的概率不翻转
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465),
@@ -40,7 +40,7 @@ transform_test = transforms.Compose([
 # cifar10路径
 cifar10Path = '~/Data/cifar'
 
-#  训练数据集
+# 训练数据集
 train_dataset = torchvision.datasets.CIFAR10(root=cifar10Path,
                                              train=True,
                                              transform=transform_train,
@@ -181,8 +181,8 @@ def ResNet18():
 
 # model = LinearNet()
 # model = MLPNet()
-# model = CNNNet()
-model = ResNet18()
+model = CNNNet()
+# model = ResNet18()
 optimizer = optim.SGD(params=model.parameters(),
                       lr=learning_rate,
                       momentum=momentum)
